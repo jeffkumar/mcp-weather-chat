@@ -331,6 +331,53 @@ class RealMCPWeatherServer {
    * Handle weather question with Claude
    */
   async handleWeatherQuestion(question, city = null) {
+    // Check if user wants Fahrenheit
+    const wantsFahrenheit = this.detectFahrenheitPreference(question);
+
+    // Extract city name from question if not provided
+    let targetCity = city;
+    if (!targetCity) {
+      // Simple city extraction - look for common patterns
+      const cityPatterns = [
+        /weather in (\w+)/i,
+        /forecast for (\w+)/i,
+        /(\w+) weather/i,
+        /(\w+) forecast/i
+      ];
+
+      for (const pattern of cityPatterns) {
+        const match = question.match(pattern);
+        if (match) {
+          targetCity = match[1];
+          break;
+        }
+      }
+    }
+
+    // If we have a city and want Fahrenheit, use the appropriate tool
+    if (targetCity && wantsFahrenheit) {
+      // Check if it's a forecast request
+      const isForecastRequest = /forecast|week|days|this week|next week/i.test(question);
+
+      if (isForecastRequest) {
+        return await this.handleGetForecast(targetCity, 7, true);
+      } else {
+        return await this.handleGetWeather(targetCity, true);
+      }
+    }
+
+    // If we have a city but no Fahrenheit preference, use regular tools
+    if (targetCity && !wantsFahrenheit) {
+      const isForecastRequest = /forecast|week|days|this week|next week/i.test(question);
+
+      if (isForecastRequest) {
+        return await this.handleGetForecast(targetCity, 7, false);
+      } else {
+        return await this.handleGetWeather(targetCity, false);
+      }
+    }
+
+    // Fall back to Claude analysis for complex questions
     if (!this.claudeService) {
       return {
         content: [
@@ -345,9 +392,9 @@ class RealMCPWeatherServer {
     let weatherData = null;
 
     // If city is provided, get current weather for context
-    if (city) {
+    if (targetCity) {
       try {
-        const result = await this.weatherService.getWeatherForChat(city, false);
+        const result = await this.weatherService.getWeatherForChat(targetCity, false, wantsFahrenheit);
         if (!result.error) {
           weatherData = result.weatherData;
         }
@@ -358,7 +405,7 @@ class RealMCPWeatherServer {
 
     // Get AI-powered answer
     try {
-      const intelligentResponse = await this.claudeService.answerWeatherQuestion(question, weatherData, city);
+      const intelligentResponse = await this.claudeService.answerWeatherQuestion(question, weatherData, targetCity);
 
       return {
         content: [
@@ -431,15 +478,17 @@ class RealMCPWeatherServer {
   }
 
   /**
-   * Detect if user wants Fahrenheit temperatures
-   */
+ * Detect if user wants Fahrenheit temperatures
+ */
   detectFahrenheitPreference(userMessage) {
     if (!userMessage) return false;
 
     const fahrenheitKeywords = [
       'fahrenheit', 'farenheit', 'f', '°f', 'degrees fahrenheit',
       'in fahrenheit', 'convert to fahrenheit', 'show fahrenheit',
-      'f instead of c', 'fahrenheit instead of celsius'
+      'f instead of c', 'fahrenheit instead of celsius',
+      'in f', 'in f instead of c', 'f instead of celsius',
+      'fahrenheit instead of c', 'f instead of c'
     ];
 
     const lowerMessage = userMessage.toLowerCase();
