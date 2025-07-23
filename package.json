@@ -1,0 +1,45 @@
+{
+  "name": "mcp-weather-chat",
+  "version": "1.0.0",
+  "description": "A ChatGPT-like React app with weather functionality using real MCP server with Claude",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "concurrently \"npm run mcp-server\" \"npm run server\" \"npm run client\"",
+    "server": "nodemon server.js",
+    "client": "cd client && PORT=3002 npm start",
+    "mcp-server": "node mcp-server/real-mcp-http-server.js",
+    "mcp-server-stdio": "node mcp-server/real-mcp-weather-server.js --stdio",
+    "mcp-server-legacy": "node mcp-server/start-mcp-server.js",
+    "build": "cd client && npm run build",
+    "setup": "cd client && npm install",
+    "test-mcp": "curl http://localhost:3001/health"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.3",
+    "@modelcontextprotocol/sdk": "^1.16.0",
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "ws": "^8.14.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "mcp",
+    "weather",
+    "chat",
+    "react",
+    "express",
+    "real-mcp",
+    "claude",
+    "ai",
+    "streamable-http"
+  ],
+  "author": "",
+  "license": "MIT"
+}
