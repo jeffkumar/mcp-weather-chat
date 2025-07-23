@@ -150,7 +150,7 @@ class WeatherService {
   /**
    * Get weather data for a city with enhanced formatting for chat responses
    */
-  async getWeatherForChat(city, includeForecast = false) {
+  async getWeatherForChat(city, includeForecast = false, useFahrenheit = false) {
     try {
       // First geocode the city
       const locations = await this.geocodeCity(city, 1);
@@ -175,9 +175,9 @@ class WeatherService {
       weatherData.location = location;
 
       if (includeForecast) {
-        return this.formatForecastForChat(weatherData);
+        return this.formatForecastForChat(weatherData, useFahrenheit);
       } else {
-        return this.formatCurrentWeatherForChat(weatherData);
+        return this.formatCurrentWeatherForChat(weatherData, useFahrenheit);
       }
     } catch (error) {
       return {
@@ -188,9 +188,16 @@ class WeatherService {
   }
 
   /**
+   * Convert Celsius to Fahrenheit
+   */
+  celsiusToFahrenheit(celsius) {
+    return Math.round((celsius * 9 / 5) + 32);
+  }
+
+  /**
    * Format current weather for chat display
    */
-  formatCurrentWeatherForChat(weatherData) {
+  formatCurrentWeatherForChat(weatherData, useFahrenheit = false) {
     const { current, location } = weatherData;
     const weatherDescription = this.getWeatherDescription(current.weatherCode);
 
@@ -198,7 +205,14 @@ class WeatherService {
     if (location.admin1) response += `, ${location.admin1}`;
     response += `, ${location.country}**\n\n`;
 
-    response += `🌡️ **Temperature:** ${current.temperature}°C (feels like ${current.apparentTemperature}°C)\n`;
+    if (useFahrenheit) {
+      const tempF = this.celsiusToFahrenheit(current.temperature);
+      const feelsLikeF = this.celsiusToFahrenheit(current.apparentTemperature);
+      response += `🌡️ **Temperature:** ${tempF}°F (feels like ${feelsLikeF}°F)\n`;
+    } else {
+      response += `🌡️ **Temperature:** ${current.temperature}°C (feels like ${current.apparentTemperature}°C)\n`;
+    }
+
     response += `☁️ **Condition:** ${weatherDescription}\n`;
     response += `💧 **Humidity:** ${current.humidity}%\n`;
     response += `🌬️ **Wind:** ${current.windSpeed} km/h`;
@@ -231,7 +245,7 @@ class WeatherService {
   /**
    * Format forecast for chat display
    */
-  formatForecastForChat(weatherData) {
+  formatForecastForChat(weatherData, useFahrenheit = false) {
     const { daily, location } = weatherData;
 
     let response = `**7-Day Weather Forecast for ${location.name}`;
@@ -245,7 +259,15 @@ class WeatherService {
       const weatherDesc = this.getWeatherDescription(day.weatherCode);
 
       response += `📅 **${dayName}, ${dateStr}**\n`;
-      response += `   🌡️ ${day.temperatureMin}° - ${day.temperatureMax}°C\n`;
+
+      if (useFahrenheit) {
+        const minF = this.celsiusToFahrenheit(day.temperatureMin);
+        const maxF = this.celsiusToFahrenheit(day.temperatureMax);
+        response += `   🌡️ ${minF}° - ${maxF}°F\n`;
+      } else {
+        response += `   🌡️ ${day.temperatureMin}° - ${day.temperatureMax}°C\n`;
+      }
+
       response += `   ☁️ ${weatherDesc}\n`;
 
       if (day.precipitationSum > 0) {
