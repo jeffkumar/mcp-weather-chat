@@ -10,7 +10,6 @@
     "client": "cd client && PORT=3002 npm start",
     "mcp-server": "node mcp-server/real-mcp-http-server.js",
     "mcp-server-stdio": "node mcp-server/real-mcp-weather-server.js --stdio",
-    "mcp-server-legacy": "node mcp-server/start-mcp-server.js",
     "build": "cd client && npm run build",
     "setup": "cd client && npm install",
     "test-mcp": "curl http://localhost:3001/health"
