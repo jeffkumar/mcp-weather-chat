@@ -1,27 +1,22 @@
-# Weather Chat Assistant
+# MCP Weather Chat
 
-A ChatGPT-like React application with weather functionality using Model Context Protocol (MCP) server integration.
+A ChatGPT-like React application with weather functionality using Model Context Protocol (MCP) server integration with Claude AI.
 
 ## Features
 
 - 🌤️ **Weather Integration**: Get real-time weather forecasts for any city
-- 💬 **Chat Interface**: ChatGPT-like conversational UI  
-- 🔄 **MCP Server**: Custom weather server using Model Context Protocol
+- 💬 **Chat Interface**: ChatGPT-like conversational UI with Claude AI
+- 🔄 **MCP Server**: Real MCP server using Model Context Protocol with Claude
 - 📱 **Responsive Design**: Works on desktop and mobile
-- 🎨 **Modern UI**: Dark theme with weather-inspired colors
+- 🎨 **Modern UI**: Clean interface with Tailwind CSS
 
-## Architecture
+## Prerequisites
 
-```
-mcp-weather-chat/
-├── server.js                 # Express API server
-├── client/                   # React frontend
-│   ├── src/
-│   │   ├── components/       # React components
-│   │   └── styles/          # CSS files
-├── mcp-server/              # MCP weather server
-└── README.md
-```
+Before running this application, you need:
+
+1. **Anthropic API Key**: Get your API key from [Anthropic Console](https://console.anthropic.com/)
+2. **Node.js**: Version 16 or higher
+3. **npm**: For package management
 
 ## Quick Start
 
@@ -35,41 +30,52 @@ npm install
 cd client && npm install && cd ..
 ```
 
-### 2. Development Mode
+### 2. Environment Setup
 
-Run both the API server and React client in development:
+Create a `.env` file in the root directory:
+
+```bash
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+```
+
+**Important**: You must have a valid Anthropic API key for the MCP server to work with Claude AI.
+
+### 3. Development Mode
+
+Run all services in development mode:
 
 ```bash
 npm run dev
 ```
 
 This will start:
-- API server on `http://localhost:3000`
-- React client on `http://localhost:3001`
+- **MCP Server** on `http://localhost:3001` (Claude AI integration)
+- **Express API Server** on `http://localhost:3000` (Backend API)
+- **React Client** on `http://localhost:3002` (Frontend)
 
-### 3. Individual Services
+### 4. Individual Services
 
 You can also run services individually:
 
 ```bash
-# API server only
+# MCP server only (Claude AI)
+npm run mcp-server
+
+# Express API server only
 npm run server
 
-# React client only (in another terminal)
+# React client only
 npm run client
-
-# MCP weather server only
-npm run mcp-server
 ```
 
 ## Usage
 
 ### Chat Interface
 
-1. Open your browser to `http://localhost:3001` (development) or `http://localhost:3000` (production)
+1. Open your browser to `http://localhost:3002`
 2. Type messages in the chat interface
 3. Ask about weather: "What's the weather in London?"
-4. The assistant will automatically detect weather queries and prompt for cities if needed
+4. Have conversations with Claude AI about any topic
 
 ### Weather Queries
 
@@ -81,111 +87,84 @@ Examples of weather questions:
 
 ### Regular Chat
 
-You can also have normal conversations:
+You can also have normal conversations with Claude:
 - "Hello, how are you?"
 - "Tell me about yourself"
 - "Help me with something"
+- "Explain quantum physics"
 
-## API Endpoints
+## Architecture
 
-### POST `/api/chat`
-
-Send a chat message and get a response.
-
-**Request:**
-```json
-{
-  "message": "What's the weather in London?",
-  "conversationHistory": []
-}
 ```
-
-**Response:**
-```json
-{
-  "response": "Here's the weather forecast for London...",
-  "weatherData": { /* weather API response */ }
-}
+mcp-weather-chat/
+├── server.js                 # Express API server
+├── client/                   # React frontend
+│   ├── src/
+│   │   ├── components/       # React components
+│   │   └── styles/          # CSS files
+├── mcp-server/              # MCP server with Claude
+│   ├── real-mcp-http-server.js    # Main MCP server
+│   ├── claude-service.js          # Claude AI integration
+│   ├── weather-service.js         # Weather API service
+│   └── http-transport.js          # HTTP transport layer
+└── README.md
 ```
 
 ## MCP Server
 
-The Model Context Protocol server handles weather data fetching and city geocoding.
+The Model Context Protocol server integrates with Claude AI and provides weather functionality.
 
 ### Features
-- City name lookup and geocoding
-- Weather data fetching from APIs
-- 7-day forecast data
-- Error handling and fallbacks
+- **Claude AI Integration**: Powered by Anthropic's Claude model
+- **Weather Data**: Simplified weather service for city forecasts
+- **HTTP Transport**: RESTful API endpoints
+- **Real-time Chat**: Streaming responses from Claude
 
-### Running MCP Server
+### MCP Server Endpoints
 
-```bash
-npm run mcp-server
-```
+- `GET /health` - Health check
+- `POST /chat` - Send messages to Claude
+- `GET /weather/:city` - Get weather for a city
 
 ## Configuration
 
-### Weather API
-
-To use real weather data, get a free API key from [OpenWeatherMap](https://openweathermap.org/api):
-
-1. Sign up for a free account
-2. Get your API key
-3. Update `server.js` line with your API key:
-   ```javascript
-   appid: 'your_api_key_here'
-   ```
-
-### Environment Variables
+### Required Environment Variables
 
 Create a `.env` file in the root directory:
 
 ```bash
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 NODE_ENV=development
 PORT=3000
-WEATHER_API_KEY=your_openweathermap_api_key
+MCP_PORT=3001
+CLIENT_PORT=3002
 ```
 
-## Deployment
+### Getting Your Anthropic API Key
 
-### Production Build
-
-```bash
-# Build React client
-npm run build
-
-# Start production server
-NODE_ENV=production npm start
-```
-
-### Docker (Optional)
-
-```bash
-# Build Docker image
-docker build -t weather-chat-app .
-
-# Run container
-docker run -p 3000:3000 weather-chat-app
-```
+1. Go to [Anthropic Console](https://console.anthropic.com/)
+2. Sign up or sign in to your account
+3. Navigate to API Keys section
+4. Create a new API key
+5. Copy the key and add it to your `.env` file
 
 ## Technology Stack
 
 ### Frontend
 - **React 18** - Modern React with hooks
-- **CSS Variables** - Custom theming system
-- **Font Awesome** - Icons
+- **Tailwind CSS** - Utility-first CSS framework
 - **Axios** - HTTP client
 
 ### Backend  
 - **Express.js** - Web server framework
 - **Node.js** - Runtime environment
-- **Axios** - Weather API integration
 - **CORS** - Cross-origin resource sharing
 
 ### MCP Server
+- **@anthropic-ai/sdk** - Official Anthropic SDK
+- **@modelcontextprotocol/sdk** - MCP SDK
 - **WebSocket** - Real-time communication
-- **Custom Protocol** - Weather-specific MCP implementation
+- **HTTP Transport** - RESTful API endpoints
 
 ## Development
 
@@ -200,27 +179,29 @@ client/src/
 │   ├── MessageList.js        # Message display
 │   └── MessageInput.js       # Input handling
 └── styles/
-    ├── App.css              # Global styles & theme
-    └── Chat.css             # Chat-specific styles
+    └── App.css              # Global styles & Tailwind
 ```
 
-### Styling Guidelines
+### Development Commands
 
-- Use CSS custom properties (variables) from `theme.css`
-- Follow the established color palette
-- Avoid hardcoded colors - use theme classes
-- Responsive design with mobile-first approach
+```bash
+# Start all services
+npm run dev
 
-### Adding Features
+# Build React client
+npm run build
 
-1. **New Chat Features**: Extend `ChatContainer.js`
-2. **Weather Data**: Modify MCP server in `mcp-server/`
-3. **UI Components**: Add to `client/src/components/`
-4. **Styling**: Update `client/src/styles/`
+# Test MCP server health
+npm run test-mcp
+```
 
 ## Troubleshooting
 
 ### Common Issues
+
+**MCP server won't start:**
+- Check if you have a valid `ANTHROPIC_API_KEY` in your `.env` file
+- Ensure port 3001 is not in use: `lsof -ti:3001 | xargs kill -9`
 
 **React app won't start:**
 ```bash
@@ -229,15 +210,14 @@ cd client && npm install
 
 **API calls failing:**
 - Check if backend server is running on port 3000
-- Verify proxy setting in `client/package.json`
+- Verify MCP server is running on port 3001
+- Check browser console for CORS errors
 
-**Weather data not loading:**
-- Get a free API key from OpenWeatherMap
-- Update the API key in `server.js`
-
-**Styling issues:**
-- Clear browser cache
-- Check CSS variable definitions in theme files
+**Port conflicts:**
+```bash
+# Kill processes using specific ports
+lsof -ti:3000,3001,3002 | xargs kill -9
+```
 
 ## License
 
