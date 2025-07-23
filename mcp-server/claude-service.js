@@ -26,7 +26,7 @@ class ClaudeService {
    * Analyze current weather and provide intelligent insights
    */
   async analyzeCurrentWeather(weatherData, city) {
-    const prompt = `You are a helpful weather assistant. Analyze this current weather data for ${city} and provide a conversational, helpful response.
+    const prompt = `You are a helpful weather assistant. Analyze this current weather data for ${city} and provide a short, concise response.
 
 Weather Data:
 - Temperature: ${weatherData.current.temperature}°C (feels like ${weatherData.current.apparentTemperature}°C)
@@ -147,6 +147,55 @@ Provide a helpful forecast summary with practical insights. Keep it conversation
       return isCurrentWeather ?
         this.fallbackCurrentWeatherResponse(weatherData, `coordinates ${latitude.toFixed(2)}, ${longitude.toFixed(2)}`) :
         this.fallbackForecastResponse(weatherData, `coordinates ${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
+    }
+  }
+
+  /**
+   * Extract city name from user message using LLM
+   */
+  async extractCityFromMessage(message) {
+    const prompt = `You are a helpful weather assistant. Extract the city name from this user message about weather.
+
+User message: "${message}"
+
+Instructions:
+1. Extract ONLY the city name (e.g., "New York", "London", "Tokyo")
+2. Handle common variations and nicknames (e.g., "NYC" → "New York", "The Big Apple" → "New York")
+3. If multiple cities are mentioned, return the most likely one
+4. If no city is mentioned, return null
+5. Return ONLY the city name, nothing else
+
+Examples:
+- "weather in miami this week" → "miami"
+- "what's the forecast for NYC?" → "New York"
+- "how's the weather in the Windy City?" → "Chicago"
+- "tell me about Paris weather" → "Paris"
+- "what's the temperature in LA?" → "Los Angeles"
+- "just checking the weather" → null
+
+City name:`;
+
+    try {
+      const response = await this.client.messages.create({
+        model: this.model,
+        max_tokens: 100, // Short response for city name
+        messages: [{
+          role: 'user',
+          content: prompt
+        }]
+      });
+
+      const cityName = response.content[0].text.trim();
+
+      // Handle null responses
+      if (cityName.toLowerCase() === 'null' || cityName === '') {
+        return null;
+      }
+
+      return cityName;
+    } catch (error) {
+      console.error('Claude city extraction error:', error);
+      return null; // Fallback to null if LLM fails
     }
   }
 

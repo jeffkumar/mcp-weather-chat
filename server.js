@@ -187,8 +187,18 @@ app.post('/api/chat', async (req, res) => {
       message.toLowerCase().includes('temperature');
 
     if (isWeatherQuery) {
-      // Extract city from message or ask for it
-      const cityMatch = extractCityFromMessage(message);
+      // Use LLM for intelligent city extraction
+      let cityMatch = null;
+      try {
+        // Import Claude service for LLM extraction
+        const ClaudeService = require('./mcp-server/claude-service');
+        const claudeService = new ClaudeService();
+        cityMatch = await claudeService.extractCityFromMessage(message);
+        console.log('🔍 LLM extracted city:', cityMatch);
+      } catch (error) {
+        console.error('LLM city extraction failed:', error);
+        // Continue with null cityMatch
+      }
 
       if (!cityMatch) {
         return res.json({
@@ -331,54 +341,7 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
-// Simple city extraction from message
-function extractCityFromMessage(message) {
-  // Enhanced regex patterns to extract city names
-  const cityPatterns = [
-    // Natural language patterns with time expressions
-    /weather (?:be )?like in ([a-zA-Z\s,]+?)(?:\s+(?:this|next)\s+(?:week|days?))/i,
-    /weather in ([a-zA-Z\s,]+?)(?:\s+(?:this|next)\s+(?:week|days?))/i,
-    /forecast for ([a-zA-Z\s,]+?)(?:\s+(?:this|next)\s+(?:week|days?))/i,
-    /weather forecast for ([a-zA-Z\s,]+?)(?:\s+(?:this|next)\s+(?:week|days?))/i,
 
-    // Natural language patterns without specific time
-    /weather (?:be )?like in ([a-zA-Z\s,]+?)(?:\?|$|\.|!)/i,
-    /weather in ([a-zA-Z\s,]+?)(?:\?|$|\.|!)/i,
-    /forecast for ([a-zA-Z\s,]+?)(?:\?|$|\.|!)/i,
-    /temperature in ([a-zA-Z\s,]+?)(?:\?|$|\.|!)/i,
-    /weather for ([a-zA-Z\s,]+?)(?:\?|$|\.|!)/i,
-    /weather of ([a-zA-Z\s,]+?)(?:\?|$|\.|!)/i,
-    /weather forecast for ([a-zA-Z\s,]+?)(?:\?|$|\.|!)/i,
-    /in ([a-zA-Z\s,]+?) weather/i,
-
-    // Handle "city this week" patterns
-    /([a-zA-Z\s,]+?)\s+(?:this|next)\s+(?:week|days?)(?:\?|$|\.|!)/i,
-  ];
-
-  for (const pattern of cityPatterns) {
-    const match = message.match(pattern);
-    if (match) {
-      return match[1].trim();
-    }
-  }
-
-  // If no specific pattern, try to extract potential city names
-  const words = message.split(' ');
-
-  // Look for capitalized words that might be cities (excluding common words)
-  const excludeWords = ['the', 'is', 'it', 'be', 'what', 'will', 'how', 'when', 'where', 'weather', 'forecast', 'temperature', 'for', 'this', 'week', 'today', 'tomorrow', 'like', 'tell', 'me', 'about'];
-  const capitalizedWords = words.filter(word =>
-    word.length > 2 &&
-    word[0] === word[0].toUpperCase() &&
-    !excludeWords.includes(word.toLowerCase())
-  );
-
-  if (capitalizedWords.length > 0) {
-    return capitalizedWords.join(' ');
-  }
-
-  return null;
-}
 
 function generateChatResponse(message, history) {
   const lowerMessage = message.toLowerCase();

@@ -105,8 +105,7 @@ mcp-weather-chat/
 ├── mcp-server/              # MCP server with Claude
 │   ├── real-mcp-http-server.js    # Main MCP server
 │   ├── claude-service.js          # Claude AI integration
-│   ├── weather-service.js         # Weather API service
-│   └── http-transport.js          # HTTP transport layer
+│   └── weather-service.js         # Weather API service
 └── README.md
 ```
 
