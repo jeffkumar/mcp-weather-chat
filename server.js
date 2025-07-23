@@ -184,7 +184,7 @@ app.post('/api/chat', async (req, res) => {
     // Check if the message is asking about weather
     const isWeatherQuery = message.toLowerCase().includes('weather') ||
       message.toLowerCase().includes('forecast') ||
-      message.toLowerCase().includes('temperature');
+      message.toLowerCase().includes('temp');
 
     if (isWeatherQuery) {
       // Use LLM for intelligent city extraction
