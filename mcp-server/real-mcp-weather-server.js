@@ -129,46 +129,15 @@ class RealMCPWeatherServer {
       }
     );
 
-    // Register get_weather_fahrenheit tool
-    this.server.registerTool(
-      'get_weather_fahrenheit',
-      {
-        title: 'Get Weather in Fahrenheit',
-        description: 'Get current weather data in Fahrenheit with AI-powered analysis',
-        inputSchema: {
-          city: z.string().describe('The city name to get weather for')
-        }
-      },
-      async ({ city }) => {
-        return await this.handleGetWeather(city, true);
-      }
-    );
-
-    // Register get_forecast_fahrenheit tool
-    this.server.registerTool(
-      'get_forecast_fahrenheit',
-      {
-        title: 'Get Weather Forecast in Fahrenheit',
-        description: 'Get weather forecast in Fahrenheit with intelligent insights',
-        inputSchema: {
-          city: z.string().describe('The city name to get forecast for'),
-          days: z.number().optional().default(7).describe('Number of days to forecast (1-7)')
-        }
-      },
-      async ({ city, days }) => {
-        return await this.handleGetForecast(city, days, true);
-      }
-    );
-
-    console.log('📋 Registered MCP tools: get_weather, get_forecast, get_weather_by_coords, geocode_city, ask_weather_question, get_weather_fahrenheit, get_forecast_fahrenheit');
+    console.log('📋 Registered MCP tools: get_weather, get_forecast, get_weather_by_coords, geocode_city, ask_weather_question');
   }
 
   /**
-   * Handle get_weather tool call with Claude analysis
-   */
-  async handleGetWeather(city, useFahrenheit = false) {
+ * Handle get_weather tool call with Claude analysis
+ */
+  async handleGetWeather(city) {
     try {
-      const result = await this.weatherService.getWeatherForChat(city, false, useFahrenheit);
+      const result = await this.weatherService.getWeatherForChat(city, false);
 
       if (result.error) {
         return {
@@ -217,11 +186,11 @@ class RealMCPWeatherServer {
   }
 
   /**
-   * Handle get_forecast tool call with Claude analysis
-   */
-  async handleGetForecast(city, days = 7, useFahrenheit = false) {
+ * Handle get_forecast tool call with Claude analysis
+ */
+  async handleGetForecast(city, days = 7) {
     try {
-      const result = await this.weatherService.getWeatherForChat(city, true, useFahrenheit);
+      const result = await this.weatherService.getWeatherForChat(city, true);
 
       if (result.error) {
         return {
@@ -328,56 +297,9 @@ class RealMCPWeatherServer {
   }
 
   /**
-   * Handle weather question with Claude
-   */
+ * Handle weather question with Claude
+ */
   async handleWeatherQuestion(question, city = null) {
-    // Check if user wants Fahrenheit
-    const wantsFahrenheit = this.detectFahrenheitPreference(question);
-
-    // Extract city name from question if not provided
-    let targetCity = city;
-    if (!targetCity) {
-      // Simple city extraction - look for common patterns
-      const cityPatterns = [
-        /weather in (\w+)/i,
-        /forecast for (\w+)/i,
-        /(\w+) weather/i,
-        /(\w+) forecast/i
-      ];
-
-      for (const pattern of cityPatterns) {
-        const match = question.match(pattern);
-        if (match) {
-          targetCity = match[1];
-          break;
-        }
-      }
-    }
-
-    // If we have a city and want Fahrenheit, use the appropriate tool
-    if (targetCity && wantsFahrenheit) {
-      // Check if it's a forecast request
-      const isForecastRequest = /forecast|week|days|this week|next week/i.test(question);
-
-      if (isForecastRequest) {
-        return await this.handleGetForecast(targetCity, 7, true);
-      } else {
-        return await this.handleGetWeather(targetCity, true);
-      }
-    }
-
-    // If we have a city but no Fahrenheit preference, use regular tools
-    if (targetCity && !wantsFahrenheit) {
-      const isForecastRequest = /forecast|week|days|this week|next week/i.test(question);
-
-      if (isForecastRequest) {
-        return await this.handleGetForecast(targetCity, 7, false);
-      } else {
-        return await this.handleGetWeather(targetCity, false);
-      }
-    }
-
-    // Fall back to Claude analysis for complex questions
     if (!this.claudeService) {
       return {
         content: [
@@ -392,9 +314,9 @@ class RealMCPWeatherServer {
     let weatherData = null;
 
     // If city is provided, get current weather for context
-    if (targetCity) {
+    if (city) {
       try {
-        const result = await this.weatherService.getWeatherForChat(targetCity, false, wantsFahrenheit);
+        const result = await this.weatherService.getWeatherForChat(city, false);
         if (!result.error) {
           weatherData = result.weatherData;
         }
@@ -405,7 +327,7 @@ class RealMCPWeatherServer {
 
     // Get AI-powered answer
     try {
-      const intelligentResponse = await this.claudeService.answerWeatherQuestion(question, weatherData, targetCity);
+      const intelligentResponse = await this.claudeService.answerWeatherQuestion(question, weatherData, city);
 
       return {
         content: [
@@ -477,23 +399,7 @@ class RealMCPWeatherServer {
     }
   }
 
-  /**
- * Detect if user wants Fahrenheit temperatures
- */
-  detectFahrenheitPreference(userMessage) {
-    if (!userMessage) return false;
 
-    const fahrenheitKeywords = [
-      'fahrenheit', 'farenheit', 'f', '°f', 'degrees fahrenheit',
-      'in fahrenheit', 'convert to fahrenheit', 'show fahrenheit',
-      'f instead of c', 'fahrenheit instead of celsius',
-      'in f', 'in f instead of c', 'f instead of celsius',
-      'fahrenheit instead of c', 'f instead of c'
-    ];
-
-    const lowerMessage = userMessage.toLowerCase();
-    return fahrenheitKeywords.some(keyword => lowerMessage.includes(keyword));
-  }
 
   setupErrorHandling() {
     process.on('SIGINT', async () => {
